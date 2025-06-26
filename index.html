@@ -1,236 +1,275 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>โปรแกรมขายทุเรียน - ทีมทุเรียน</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body {
-      font-family: 'Sarabun', sans-serif;
-      background-color: #fdfcef;
-      color: #333;
-      padding: 20px;
-    }
-    h1 {
-      color: #7ea14b;
-      text-align: center;
-    }
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background-color: #fffbea;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    input {
-      width: calc(100% - 16px);
-      padding: 8px;
-      margin-top: 4px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #ffcc00;
-      color: #333;
-      border: none;
-      padding: 10px 16px;
-      margin-top: 20px;
-      border-radius: 12px;
-      width: 100%;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #ffda4f;
-    }
-    .result {
-      margin-top: 20px;
-      font-size: 18px;
-      color: #5c7d2e;
-      text-align: center;
-      font-weight: bold;
-    }
-    .error {
-      color: #d9534f;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมคำนวณราคาทุเรียนภูเขาไฟ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply Kanit font to the whole page */
+        body {
+            font-family: 'Kanit', sans-serif;
+        }
+        /* Custom styles for better UI */
+        .form-input {
+            @apply w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-shadow;
+        }
+        .radio-label {
+            @apply flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-yellow-50 hover:border-yellow-400 transition-all;
+        }
+        .radio-input:checked + .radio-label {
+            @apply bg-yellow-100 border-yellow-500 ring-2 ring-yellow-400;
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h1>ใบเสนอราคาทุเรียน</h1>
-    <label for="customerName">ชื่อลูกค้า:</label>
-    <input type="text" id="customerName" placeholder="กรุณาใส่ชื่อลูกค้า" />
+<body class="bg-yellow-50/50 flex items-center justify-center min-h-screen p-4">
 
-    <label for="productName">ชื่อสินค้า:</label>
-    <input type="text" id="productName" value="ทุเรียน ภูเขาไฟ" disabled />
+    <main class="w-full max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-2xl shadow-lg border border-gray-200">
+        
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">โปรแกรมคำนวณราคาทุเรียนภูเขาไฟ</h1>
+            <p class="text-gray-500 mt-2">กรอกข้อมูลเพื่อคำนวณราคาและสร้างใบเสนอราคา</p>
+        </div>
 
-    <label for="weight">จำนวนน้ำหนัก (กก.):</label>
-    <input type="number" id="weight" min="0" step="0.1" placeholder="เช่น 5.5" />
+        <div class="grid md:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <form id="price-calculator-form">
+                    <div>
+                        <label for="customerName" class="block text-sm font-medium text-gray-700 mb-1">ชื่อลูกค้า</label>
+                        <input type="text" id="customerName" class="form-input" placeholder="เช่น คุณสมชาย ใจดี" required>
+                    </div>
 
-    <label for="pricePerKg">ราคาขายต่อกิโล (บาท):</label>
-    <input type="number" id="pricePerKg" min="0" step="0.01" placeholder="เช่น 120.00" />
+                    <div>
+                        <label for="productName" class="block text-sm font-medium text-gray-700 mb-1">ชื่อสินค้า</label>
+                        <input type="text" id="productName" class="form-input bg-gray-200 cursor-not-allowed" value="ทุเรียนภูเขาไฟศรีสะเกษ" readonly>
+                    </div>
 
-    <button onclick="calculateTotal()">คำนวณราคา</button>
-    <button onclick="downloadPDF()">ดาวน์โหลดใบเสนอราคา (PDF)</button>
+                    <div>
+                        <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">น้ำหนัก (กิโลกรัม)</label>
+                        <input type="number" id="weight" class="form-input" placeholder="เช่น 5.5" min="0" step="0.01" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ราคาขาย (บาท/กก.)</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div>
+                                <input type="radio" id="price120" name="priceOption" value="120" class="hidden radio-input" checked>
+                                <label for="price120" class="radio-label justify-center">120.-</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="price130" name="priceOption" value="130" class="hidden radio-input">
+                                <label for="price130" class="radio-label justify-center">130.-</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="price150" name="priceOption" value="150" class="hidden radio-input">
+                                <label for="price150" class="radio-label justify-center">150.-</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="priceCustom" name="priceOption" value="custom" class="hidden radio-input">
+                                <label for="priceCustom" class="radio-label justify-center">อื่นๆ</label>
+                            </div>
+                        </div>
+                        <input type="number" id="customPrice" class="form-input mt-2 hidden" placeholder="กรอกราคาเอง" min="0">
+                    </div>
 
-    <div class="result" id="result"></div>
+                    <div>
+                        <label for="logoUpload" class="block text-sm font-medium text-gray-700 mb-1">หรือ อัปโหลดโลโก้ร้านที่นี่</label>
+                        <input type="file" id="logoUpload" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-800 hover:file:bg-yellow-200 cursor-pointer">
+                    </div>
 
-  </div>
-  <script>
-    let latestQuote = null;
+                    <button type="submit" class="w-full bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-300 shadow-md hover:shadow-lg">
+                        คำนวณราคา
+                    </button>
+                </form>
+            </div>
 
-    // --- ส่วนเพิ่มฟอนต์ภาษาไทย ---
-    // นี่คือฟอนต์ Sarabun New Bold ในรูปแบบ Base64
-    // คุณสามารถใช้ฟอนต์อื่น ๆ ได้ แต่ต้องแปลงเป็น Base64 ก่อน
-    // เนื่องจากข้อจำกัดด้านความยาวของโค้ดในตัวอย่างนี้ ผมจะใช้ฟอนต์ Sarabun New Bold แบบเต็มที่ถูกแปลงแล้ว
-    // ถ้าคุณต้องการใช้ฟอนต์อื่น คุณจะต้องแปลงเองและนำมาใส่ที่นี่
-    const THSARABUN_FONT = `
-    AAEAAAASAIAAAwAAAAAxAAAIgAAARABDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-    (นี่คือส่วนของข้อมูลฟอนต์ Base64 ซึ่งจะยาวมาก)
-    ... (ข้อมูล Base64 จะถูกตัดออกที่นี่เพื่อความกระชับ) ...
-    AAAAAAEAAAASAIAAAwAAAAAxAAAIgAAARABDAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-    `; // ข้อมูล Base64 ของฟอนต์ Sarabun New Bold หรือฟอนต์อื่นที่คุณแปลงมา
+            <div id="quotation-container" class="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300 hidden">
+                <div id="quotation-content">
+                    <div class="flex justify-between items-start pb-4 border-b-2 border-gray-200 mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">ใบเสนอราคา</h2>
+                            <p class="text-sm text-gray-500" id="quote-date"></p>
+                        </div>
+                        <img id="logo-preview" src="https://i.imgur.com/832P5W0.png" alt="Logo preview" class="max-h-16">
+                    </div>
 
-    // เนื่องจากข้อมูล Base64 ของฟอนต์จะยาวมาก ผมจะไม่สามารถใส่ลงไปทั้งหมดในคำตอบนี้ได้
-    // คุณจะต้องหา Base64 ของฟอนต์ภาษาไทย (เช่น TH Sarabun New Regular) มาใส่แทน
-    // คุณสามารถแปลงฟอนต์ TTF เป็น Base64 ได้จากเครื่องมือออนไลน์ เช่น
-    // https://www.fontsquirrel.com/tools/webfont-generator (เลือก Expert -> Base64 Encode)
-    // หรือ https://raw.githubusercontent.com/MrRio/jsPDF/master/fontconverter/fontconverter.html
+                    <div class="mb-6">
+                        <p class="text-sm text-gray-500">เรียนคุณ:</p>
+                        <p class="font-semibold text-gray-800 text-lg" id="quote-customerName"></p>
+                    </div>
 
-    // เพื่อให้โค้ดนี้ทำงานได้ คุณจะต้องแทนที่ `... (ข้อมูล Base64 จะถูกตัดออกที่นี่เพื่อความกระชับ) ...`
-    // ด้วย Base64 ของฟอนต์ TH Sarabun New จริงๆ
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-3 text-sm font-semibold text-gray-600">รายการ</th>
+                                <th class="p-3 text-sm font-semibold text-gray-600 text-center">น้ำหนัก (กก.)</th>
+                                <th class="p-3 text-sm font-semibold text-gray-600 text-center">ราคา/หน่วย</th>
+                                <th class="p-3 text-sm font-semibold text-gray-600 text-right">ราคารวม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b">
+                                <td class="p-3" id="quote-productName"></td>
+                                <td class="p-3 text-center" id="quote-weight"></td>
+                                <td class="p-3 text-center" id="quote-unitPrice"></td>
+                                <td class="p-3 text-right" id="quote-lineTotal"></td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-    // ตัวอย่างการเพิ่มฟอนต์ (สมมติว่าคุณมี Base64 ของฟอนต์อยู่ในตัวแปร `THSARABUN_FONT_BASE64`)
-    // โดยปกติ คุณจะสร้างไฟล์ JavaScript แยกต่างหาก (เช่น `fonts.js`) และนำเข้า
-    // เพื่อให้โค้ดนี้สามารถทำงานได้ทันทีโดยไม่ต้องมีไฟล์ฟอนต์แยก ผมจะจำลองการเพิ่มฟอนต์
-    // แต่โปรดทราบว่า `THSARABUN_FONT` ในโค้ดตัวอย่างนี้ **ไม่สมบูรณ์** คุณต้องใส่ข้อมูลจริง
-    // ในสถานการณ์จริง คุณจะสร้างไฟล์ .js ที่มีข้อมูลฟอนต์ Base64 และโหลดไฟล์นั้น
-    // เช่น: import { thSarabunRegular } from './thSarabunRegular-font.js';
+                    <div class="mt-6 flex justify-end">
+                        <div class="w-full max-w-xs text-right">
+                             <div class="flex justify-between text-lg">
+                                <span class="font-medium text-gray-600">รวมเป็นเงิน</span>
+                                <span class="font-bold text-gray-800" id="quote-subTotal"></span>
+                            </div>
+                            <div class="flex justify-between text-2xl mt-2 pt-2 border-t-2">
+                                <span class="font-bold text-gray-800">ยอดรวมสุทธิ</span>
+                                <span class="font-bold text-yellow-600" id="quote-totalPrice"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    // สำหรับการสาธิต ผมจะจำลองฟังก์ชัน addFont ที่ควรจะมี Base64 ของฟอนต์จริง
-    // คุณสามารถดาวน์โหลดฟอนต์ TH Sarabun New ได้จากเว็บไซต์ของ SIL International หรือกรมทรัพย์สินทางปัญญา
-    // และใช้เครื่องมือแปลงฟอนต์ออนไลน์เพื่อรับ Base64 String
-    //
-    // **สำคัญ:** เนื่องจากฟอนต์ Base64 มีขนาดใหญ่มาก (หลายร้อย KB ถึง MB) ผมไม่สามารถแสดงโค้ดเต็มในนี้ได้
-    // คุณจะต้อง **สร้างไฟล์ JavaScript แยกต่างหาก** สำหรับข้อมูลฟอนต์ Base64
-    // ตัวอย่างเช่น:
-    // **`thSarabunNewRegular.js`**
-    // `export const thSarabunNewRegular = 'AAEAAAAS...'; // Base64 ของฟอนต์จริง`
-    //
-    // และในไฟล์ HTML ของคุณ:
-    // `<script src="./thSarabunNewRegular.js"></script>`
-    // จากนั้นคุณสามารถเรียกใช้ `doc.addFileToVFS('THSarabunNew-Regular.ttf', thSarabunNewRegular);`
-    // และ `doc.addFont('THSarabunNew-Regular.ttf', 'THSarabunNew', 'normal');`
+                <button id="download-pdf" class="w-full mt-6 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 shadow-md hover:shadow-lg">
+                    ดาวน์โหลดใบเสนอราคา (PDF)
+                </button>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // --- DOM Element Selection ---
+        const form = document.getElementById('price-calculator-form');
+        const customPriceInput = document.getElementById('customPrice');
+        const priceOptions = document.querySelectorAll('input[name="priceOption"]');
+        const quotationContainer = document.getElementById('quotation-container');
+        const downloadPdfButton = document.getElementById('download-pdf');
+        const logoUpload = document.getElementById('logoUpload');
+        const logoPreview = document.getElementById('logo-preview');
+        
+        // --- Event Listeners ---
 
-    // เพื่อให้ตัวอย่างนี้ทำงานได้ (แม้จะไม่มีฟอนต์จริงฝังอยู่) ผมจะสร้างฟังก์ชัน addThaiFontPlaceholder
-    // ที่คุณจะต้องแทนที่ด้วยโค้ดการฝังฟอนต์จริง
-    function addThaiFont(doc) {
-        // **นี่คือส่วนที่คุณต้องนำโค้ด Base64 ของฟอนต์ TH Sarabun New จริงมาใส่**
-        // ตัวอย่างเช่น:
-        // doc.addFileToVFS("THSarabunNew.ttf", YOUR_THSARABUN_NEW_BASE64_STRING_HERE);
-        // doc.addFont("THSarabunNew.ttf", "THSarabunNew", "normal");
-        // doc.setFont("THSarabunNew");
+        // Handle custom price input visibility
+        priceOptions.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.value === 'custom') {
+                    customPriceInput.classList.remove('hidden');
+                    customPriceInput.focus();
+                    customPriceInput.required = true;
+                } else {
+                    customPriceInput.classList.add('hidden');
+                    customPriceInput.value = '';
+                    customPriceInput.required = false;
+                }
+            });
+        });
 
-        // เนื่องจากผมไม่สามารถให้ Base64 string เต็มๆ ได้ในคำตอบนี้
-        // ผมจะใช้ฟอนต์มาตรฐานของ jsPDF และแจ้งเตือนให้ผู้ใช้ทราบว่าต้องเพิ่มฟอนต์ไทย
-        // หากต้องการให้แสดงผลภาษาไทยได้
-        console.warn("⚠️ โปรดทราบ: การแสดงผลภาษาไทยใน PDF จะไม่สมบูรณ์หากไม่มีการฝังฟอนต์ภาษาไทยจริงลงไป");
-        console.warn("กรุณาเพิ่มโค้ดสำหรับฝังฟอนต์ภาษาไทย (เช่น TH Sarabun New) ในฟังก์ชัน `addThaiFont`");
-        doc.setFont('Helvetica'); // ใช้ Helvetica เป็นฟอนต์สำรองหากไม่มีฟอนต์ไทย
-    }
-    // --- สิ้นสุดส่วนเพิ่มฟอนต์ภาษาไทย ---
+        // Handle logo upload from file input
+        logoUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Set the src of the preview image to the uploaded file
+                    logoPreview.src = e.target.result;
+                    logoPreview.alt = "Uploaded Logo";
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Handle form submission for calculation
+        form.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent page reload
 
+            // --- Get values from the form ---
+            const customerName = document.getElementById('customerName').value;
+            const productName = document.getElementById('productName').value;
+            const weight = parseFloat(document.getElementById('weight').value);
+            
+            let price = 0;
+            const selectedPriceOption = document.querySelector('input[name="priceOption"]:checked').value;
+            
+            if (selectedPriceOption === 'custom') {
+                price = parseFloat(customPriceInput.value);
+            } else {
+                price = parseFloat(selectedPriceOption);
+            }
 
-    function calculateTotal() {
-      const customerNameInput = document.getElementById('customerName');
-      const weightInput = document.getElementById('weight');
-      const pricePerKgInput = document.getElementById('pricePerKg');
-      const resultDiv = document.getElementById('result');
+            // --- Validation ---
+            if (!customerName || isNaN(weight) || isNaN(price) || weight <= 0 || price <= 0) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง (น้ำหนักและราคาต้องมากกว่า 0)');
+                return;
+            }
 
-      const name = customerNameInput.value.trim();
-      const weight = parseFloat(weightInput.value);
-      const price = parseFloat(pricePerKgInput.value);
+            // --- Calculation ---
+            const totalPrice = weight * price;
 
-      if (!name) {
-        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกชื่อลูกค้า</span>';
-        latestQuote = null;
-        return;
-      }
-      if (isNaN(weight) || weight <= 0) {
-        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกน้ำหนักให้ถูกต้อง</span>';
-        latestQuote = null;
-        return;
-      }
-      if (isNaN(price) || price <= 0) {
-        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกราคาขายต่อกิโลให้ถูกต้อง</span>';
-        latestQuote = null;
-        return;
-      }
+            // --- Populate Quotation ---
+            // Format for currency and numbers in Thai style
+            const currencyFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' });
+            const numberFormatter = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      const total = weight * price;
+            document.getElementById('quote-date').innerText = `วันที่: ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+            document.getElementById('quote-customerName').innerText = customerName;
+            
+            document.getElementById('quote-productName').innerText = productName;
+            document.getElementById('quote-weight').innerText = numberFormatter.format(weight);
+            document.getElementById('quote-unitPrice').innerText = currencyFormatter.format(price);
+            document.getElementById('quote-lineTotal').innerText = currencyFormatter.format(totalPrice);
+            
+            document.getElementById('quote-subTotal').innerText = currencyFormatter.format(totalPrice);
+            document.getElementById('quote-totalPrice').innerText = currencyFormatter.format(totalPrice);
 
-      resultDiv.innerHTML = `คุณ ${name} ต้องชำระเงินทั้งหมด: <strong>${total.toFixed(2)}</strong> บาท`;
-      resultDiv.classList.remove('error');
+            // --- Show the quotation ---
+            quotationContainer.classList.remove('hidden');
+        });
 
-      latestQuote = {
-        name,
-        product: document.getElementById('productName').value,
-        weight: weight.toFixed(2),
-        price: price.toFixed(2),
-        total: total.toFixed(2)
-      };
-    }
+        // Handle PDF download
+        downloadPdfButton.addEventListener('click', async () => {
+            // Get the jsPDF constructor from the window object
+            const { jsPDF } = window.jspdf;
+            const quotationContent = document.getElementById('quotation-content');
+            const customerName = document.getElementById('customerName').value.trim().replace(/\s+/g, '_');
+            const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD format
+            const filename = `ใบเสนอราคา_${customerName}_${today}.pdf`;
 
-    async function downloadPDF() {
-      if (!latestQuote) {
-        alert('กรุณาคำนวณราคาก่อนดาวน์โหลด PDF');
-        return;
-      }
+            // Use html2canvas to capture the div as an image
+            const canvas = await html2canvas(quotationContent, { 
+                scale: 2, // Increase scale for better resolution
+                useCORS: true // This is crucial for loading external images (like your logo from a URL)
+            });
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+            const imgData = canvas.toDataURL('image/png');
+            
+            // Create a new PDF document (A4 size)
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
 
-      // เรียกใช้ฟังก์ชันเพื่อเพิ่มฟอนต์ภาษาไทย
-      addThaiFont(doc);
+            // Calculate image dimensions to fit the A4 page
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgProps = pdf.getImageProperties(imgData);
+            const imgWidth = pdf.internal.pageSize.getWidth(); // Set image width to fit page width
+            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+            
+            // Add the image to the PDF
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
 
-      const date = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'short' });
+            // Save the PDF
+            pdf.save(filename);
+        });
+    </script>
 
-      doc.setFontSize(24);
-      doc.setTextColor(59, 89, 152);
-      doc.text("ใบเสนอราคาทุเรียน", 105, 30, { align: 'center' });
-
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-
-      let y = 50;
-      doc.text(`วันที่: ${date}`, 20, y);
-      y += 10;
-      doc.text(`ชื่อลูกค้า: ${latestQuote.name}`, 20, y);
-      y += 10;
-      doc.text(`สินค้า: ${latestQuote.product}`, 20, y);
-      y += 10;
-      doc.text(`น้ำหนัก: ${latestQuote.weight} กก.`, 20, y);
-      y += 10;
-      doc.text(`ราคาขายต่อกิโล: ${latestQuote.price} บาท`, 20, y);
-      y += 10;
-
-      doc.setFontSize(18);
-      doc.setTextColor(0, 100, 0);
-      doc.text(`รวมทั้งหมด: ${latestQuote.total} บาท`, 20, y + 10);
-
-      doc.save(`ใบเสนอราคา_${latestQuote.name}_${Date.now()}.pdf`);
-    }
-  </script>
 </body>
 </html>
+
