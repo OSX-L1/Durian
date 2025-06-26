@@ -28,16 +28,16 @@
     label {
       display: block;
       margin-top: 10px;
-      margin-bottom: 5px; /* เพิ่มระยะห่างด้านล่างของ label */
-      font-weight: bold; /* ทำให้ label หนาขึ้นเล็กน้อย */
+      margin-bottom: 5px;
+      font-weight: bold;
     }
     input {
-      width: calc(100% - 16px); /* ปรับความกว้างให้พอดีกับ padding */
+      width: calc(100% - 16px);
       padding: 8px;
       margin-top: 4px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      box-sizing: border-box; /* ทำให้ padding ไม่เพิ่มขนาดของ input */
+      box-sizing: border-box;
     }
     button {
       background-color: #ffcc00;
@@ -49,7 +49,7 @@
       width: 100%;
       cursor: pointer;
       font-weight: bold;
-      transition: background-color 0.3s ease; /* เพิ่ม transition ให้ปุ่ม */
+      transition: background-color 0.3s ease;
     }
     button:hover {
       background-color: #ffda4f;
@@ -58,11 +58,11 @@
       margin-top: 20px;
       font-size: 18px;
       color: #5c7d2e;
-      text-align: center; /* จัดให้อยู่กึ่งกลาง */
+      text-align: center;
       font-weight: bold;
     }
     .error {
-      color: #d9534f; /* สีแดงสำหรับข้อผิดพลาด */
+      color: #d9534f;
     }
   </style>
 </head>
@@ -90,19 +90,81 @@
   <script>
     let latestQuote = null;
 
+    // --- ส่วนเพิ่มฟอนต์ภาษาไทย ---
+    // นี่คือฟอนต์ Sarabun New Bold ในรูปแบบ Base64
+    // คุณสามารถใช้ฟอนต์อื่น ๆ ได้ แต่ต้องแปลงเป็น Base64 ก่อน
+    // เนื่องจากข้อจำกัดด้านความยาวของโค้ดในตัวอย่างนี้ ผมจะใช้ฟอนต์ Sarabun New Bold แบบเต็มที่ถูกแปลงแล้ว
+    // ถ้าคุณต้องการใช้ฟอนต์อื่น คุณจะต้องแปลงเองและนำมาใส่ที่นี่
+    const THSARABUN_FONT = `
+    AAEAAAASAIAAAwAAAAAxAAAIgAAARABDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    (นี่คือส่วนของข้อมูลฟอนต์ Base64 ซึ่งจะยาวมาก)
+    ... (ข้อมูล Base64 จะถูกตัดออกที่นี่เพื่อความกระชับ) ...
+    AAAAAAEAAAASAIAAAwAAAAAxAAAIgAAARABDAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    `; // ข้อมูล Base64 ของฟอนต์ Sarabun New Bold หรือฟอนต์อื่นที่คุณแปลงมา
+
+    // เนื่องจากข้อมูล Base64 ของฟอนต์จะยาวมาก ผมจะไม่สามารถใส่ลงไปทั้งหมดในคำตอบนี้ได้
+    // คุณจะต้องหา Base64 ของฟอนต์ภาษาไทย (เช่น TH Sarabun New Regular) มาใส่แทน
+    // คุณสามารถแปลงฟอนต์ TTF เป็น Base64 ได้จากเครื่องมือออนไลน์ เช่น
+    // https://www.fontsquirrel.com/tools/webfont-generator (เลือก Expert -> Base64 Encode)
+    // หรือ https://raw.githubusercontent.com/MrRio/jsPDF/master/fontconverter/fontconverter.html
+
+    // เพื่อให้โค้ดนี้ทำงานได้ คุณจะต้องแทนที่ `... (ข้อมูล Base64 จะถูกตัดออกที่นี่เพื่อความกระชับ) ...`
+    // ด้วย Base64 ของฟอนต์ TH Sarabun New จริงๆ
+
+    // ตัวอย่างการเพิ่มฟอนต์ (สมมติว่าคุณมี Base64 ของฟอนต์อยู่ในตัวแปร `THSARABUN_FONT_BASE64`)
+    // โดยปกติ คุณจะสร้างไฟล์ JavaScript แยกต่างหาก (เช่น `fonts.js`) และนำเข้า
+    // เพื่อให้โค้ดนี้สามารถทำงานได้ทันทีโดยไม่ต้องมีไฟล์ฟอนต์แยก ผมจะจำลองการเพิ่มฟอนต์
+    // แต่โปรดทราบว่า `THSARABUN_FONT` ในโค้ดตัวอย่างนี้ **ไม่สมบูรณ์** คุณต้องใส่ข้อมูลจริง
+    // ในสถานการณ์จริง คุณจะสร้างไฟล์ .js ที่มีข้อมูลฟอนต์ Base64 และโหลดไฟล์นั้น
+    // เช่น: import { thSarabunRegular } from './thSarabunRegular-font.js';
+
+    // สำหรับการสาธิต ผมจะจำลองฟังก์ชัน addFont ที่ควรจะมี Base64 ของฟอนต์จริง
+    // คุณสามารถดาวน์โหลดฟอนต์ TH Sarabun New ได้จากเว็บไซต์ของ SIL International หรือกรมทรัพย์สินทางปัญญา
+    // และใช้เครื่องมือแปลงฟอนต์ออนไลน์เพื่อรับ Base64 String
+    //
+    // **สำคัญ:** เนื่องจากฟอนต์ Base64 มีขนาดใหญ่มาก (หลายร้อย KB ถึง MB) ผมไม่สามารถแสดงโค้ดเต็มในนี้ได้
+    // คุณจะต้อง **สร้างไฟล์ JavaScript แยกต่างหาก** สำหรับข้อมูลฟอนต์ Base64
+    // ตัวอย่างเช่น:
+    // **`thSarabunNewRegular.js`**
+    // `export const thSarabunNewRegular = 'AAEAAAAS...'; // Base64 ของฟอนต์จริง`
+    //
+    // และในไฟล์ HTML ของคุณ:
+    // `<script src="./thSarabunNewRegular.js"></script>`
+    // จากนั้นคุณสามารถเรียกใช้ `doc.addFileToVFS('THSarabunNew-Regular.ttf', thSarabunNewRegular);`
+    // และ `doc.addFont('THSarabunNew-Regular.ttf', 'THSarabunNew', 'normal');`
+
+    // เพื่อให้ตัวอย่างนี้ทำงานได้ (แม้จะไม่มีฟอนต์จริงฝังอยู่) ผมจะสร้างฟังก์ชัน addThaiFontPlaceholder
+    // ที่คุณจะต้องแทนที่ด้วยโค้ดการฝังฟอนต์จริง
+    function addThaiFont(doc) {
+        // **นี่คือส่วนที่คุณต้องนำโค้ด Base64 ของฟอนต์ TH Sarabun New จริงมาใส่**
+        // ตัวอย่างเช่น:
+        // doc.addFileToVFS("THSarabunNew.ttf", YOUR_THSARABUN_NEW_BASE64_STRING_HERE);
+        // doc.addFont("THSarabunNew.ttf", "THSarabunNew", "normal");
+        // doc.setFont("THSarabunNew");
+
+        // เนื่องจากผมไม่สามารถให้ Base64 string เต็มๆ ได้ในคำตอบนี้
+        // ผมจะใช้ฟอนต์มาตรฐานของ jsPDF และแจ้งเตือนให้ผู้ใช้ทราบว่าต้องเพิ่มฟอนต์ไทย
+        // หากต้องการให้แสดงผลภาษาไทยได้
+        console.warn("⚠️ โปรดทราบ: การแสดงผลภาษาไทยใน PDF จะไม่สมบูรณ์หากไม่มีการฝังฟอนต์ภาษาไทยจริงลงไป");
+        console.warn("กรุณาเพิ่มโค้ดสำหรับฝังฟอนต์ภาษาไทย (เช่น TH Sarabun New) ในฟังก์ชัน `addThaiFont`");
+        doc.setFont('Helvetica'); // ใช้ Helvetica เป็นฟอนต์สำรองหากไม่มีฟอนต์ไทย
+    }
+    // --- สิ้นสุดส่วนเพิ่มฟอนต์ภาษาไทย ---
+
+
     function calculateTotal() {
       const customerNameInput = document.getElementById('customerName');
       const weightInput = document.getElementById('weight');
       const pricePerKgInput = document.getElementById('pricePerKg');
       const resultDiv = document.getElementById('result');
 
-      const name = customerNameInput.value.trim(); // ใช้ trim() เพื่อลบช่องว่างหน้าหลัง
+      const name = customerNameInput.value.trim();
       const weight = parseFloat(weightInput.value);
       const price = parseFloat(pricePerKgInput.value);
 
       if (!name) {
         resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกชื่อลูกค้า</span>';
-        latestQuote = null; // รีเซ็ต latestQuote ถ้าข้อมูลไม่สมบูรณ์
+        latestQuote = null;
         return;
       }
       if (isNaN(weight) || weight <= 0) {
@@ -119,13 +181,13 @@
       const total = weight * price;
 
       resultDiv.innerHTML = `คุณ ${name} ต้องชำระเงินทั้งหมด: <strong>${total.toFixed(2)}</strong> บาท`;
-      resultDiv.classList.remove('error'); // ลบ class error ออกเมื่อคำนวณสำเร็จ
+      resultDiv.classList.remove('error');
 
       latestQuote = {
         name,
         product: document.getElementById('productName').value,
-        weight: weight.toFixed(2), // เก็บเป็นทศนิยม 2 ตำแหน่ง
-        price: price.toFixed(2),   // เก็บเป็นทศนิยม 2 ตำแหน่ง
+        weight: weight.toFixed(2),
+        price: price.toFixed(2),
         total: total.toFixed(2)
       };
     }
@@ -139,23 +201,17 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      // ต้องโหลดฟอนต์ภาษาไทยสำหรับ jsPDF ก่อนใช้งาน
-      // คุณสามารถสร้าง base64 font ได้จาก https://raw.githubusercontent.com/MrRio/jsPDF/master/fontconverter/fontconverter.html
-      // หรือใช้ฟอนต์ที่เตรียมไว้แล้ว (เช่น THSarabunNew)
-      // ตัวอย่างการเพิ่มฟอนต์ THSarabunNew (ต้องเพิ่มในโค้ดจริง หรือโหลดจาก CDN)
-      // นี่คือส่วนที่สำคัญสำหรับการแสดงผลภาษาไทยใน PDF
-      doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal'); // สมมติว่ามีไฟล์ Sarabun-Regular.ttf ในโปรเจกต์
-      doc.setFont('Sarabun', 'normal'); // กำหนดฟอนต์ที่ใช้
-      // ถ้าไม่มีไฟล์ฟอนต์ ให้ใช้ฟอนต์ที่ใกล้เคียงที่สุด หรือบอกผู้ใช้ให้เพิ่มฟอนต์
+      // เรียกใช้ฟังก์ชันเพื่อเพิ่มฟอนต์ภาษาไทย
+      addThaiFont(doc);
 
       const date = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'short' });
 
       doc.setFontSize(24);
-      doc.setTextColor(59, 89, 152); // สีน้ำเงินเข้ม
-      doc.text("ใบเสนอราคาทุเรียน", 105, 30, { align: 'center' }); // จัดกึ่งกลาง
+      doc.setTextColor(59, 89, 152);
+      doc.text("ใบเสนอราคาทุเรียน", 105, 30, { align: 'center' });
 
       doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0); // สีดำ
+      doc.setTextColor(0, 0, 0);
 
       let y = 50;
       doc.text(`วันที่: ${date}`, 20, y);
@@ -170,7 +226,7 @@
       y += 10;
 
       doc.setFontSize(18);
-      doc.setTextColor(0, 100, 0); // สีเขียวเข้ม
+      doc.setTextColor(0, 100, 0);
       doc.text(`รวมทั้งหมด: ${latestQuote.total} บาท`, 20, y + 10);
 
       doc.save(`ใบเสนอราคา_${latestQuote.name}_${Date.now()}.pdf`);
