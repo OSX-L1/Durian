@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>โปรแกรมขายทุเรียน - ทีมทุเรียน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background-color: #fdfcef;
+      color: #333;
+      padding: 20px;
+    }
+    h1 {
+      color: #7ea14b;
+      text-align: center;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background-color: #fffbea;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 5px; /* เพิ่มระยะห่างด้านล่างของ label */
+      font-weight: bold; /* ทำให้ label หนาขึ้นเล็กน้อย */
+    }
+    input {
+      width: calc(100% - 16px); /* ปรับความกว้างให้พอดีกับ padding */
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box; /* ทำให้ padding ไม่เพิ่มขนาดของ input */
+    }
+    button {
+      background-color: #ffcc00;
+      color: #333;
+      border: none;
+      padding: 10px 16px;
+      margin-top: 20px;
+      border-radius: 12px;
+      width: 100%;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease; /* เพิ่ม transition ให้ปุ่ม */
+    }
+    button:hover {
+      background-color: #ffda4f;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #5c7d2e;
+      text-align: center; /* จัดให้อยู่กึ่งกลาง */
+      font-weight: bold;
+    }
+    .error {
+      color: #d9534f; /* สีแดงสำหรับข้อผิดพลาด */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ใบเสนอราคาทุเรียน</h1>
+    <label for="customerName">ชื่อลูกค้า:</label>
+    <input type="text" id="customerName" placeholder="กรุณาใส่ชื่อลูกค้า" />
+
+    <label for="productName">ชื่อสินค้า:</label>
+    <input type="text" id="productName" value="ทุเรียน ภูเขาไฟ" disabled />
+
+    <label for="weight">จำนวนน้ำหนัก (กก.):</label>
+    <input type="number" id="weight" min="0" step="0.1" placeholder="เช่น 5.5" />
+
+    <label for="pricePerKg">ราคาขายต่อกิโล (บาท):</label>
+    <input type="number" id="pricePerKg" min="0" step="0.01" placeholder="เช่น 120.00" />
+
+    <button onclick="calculateTotal()">คำนวณราคา</button>
+    <button onclick="downloadPDF()">ดาวน์โหลดใบเสนอราคา (PDF)</button>
+
+    <div class="result" id="result"></div>
+
+  </div>
+  <script>
+    let latestQuote = null;
+
+    function calculateTotal() {
+      const customerNameInput = document.getElementById('customerName');
+      const weightInput = document.getElementById('weight');
+      const pricePerKgInput = document.getElementById('pricePerKg');
+      const resultDiv = document.getElementById('result');
+
+      const name = customerNameInput.value.trim(); // ใช้ trim() เพื่อลบช่องว่างหน้าหลัง
+      const weight = parseFloat(weightInput.value);
+      const price = parseFloat(pricePerKgInput.value);
+
+      if (!name) {
+        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกชื่อลูกค้า</span>';
+        latestQuote = null; // รีเซ็ต latestQuote ถ้าข้อมูลไม่สมบูรณ์
+        return;
+      }
+      if (isNaN(weight) || weight <= 0) {
+        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกน้ำหนักให้ถูกต้อง</span>';
+        latestQuote = null;
+        return;
+      }
+      if (isNaN(price) || price <= 0) {
+        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกราคาขายต่อกิโลให้ถูกต้อง</span>';
+        latestQuote = null;
+        return;
+      }
+
+      const total = weight * price;
+
+      resultDiv.innerHTML = `คุณ ${name} ต้องชำระเงินทั้งหมด: <strong>${total.toFixed(2)}</strong> บาท`;
+      resultDiv.classList.remove('error'); // ลบ class error ออกเมื่อคำนวณสำเร็จ
+
+      latestQuote = {
+        name,
+        product: document.getElementById('productName').value,
+        weight: weight.toFixed(2), // เก็บเป็นทศนิยม 2 ตำแหน่ง
+        price: price.toFixed(2),   // เก็บเป็นทศนิยม 2 ตำแหน่ง
+        total: total.toFixed(2)
+      };
+    }
+
+    async function downloadPDF() {
+      if (!latestQuote) {
+        alert('กรุณาคำนวณราคาก่อนดาวน์โหลด PDF');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // ต้องโหลดฟอนต์ภาษาไทยสำหรับ jsPDF ก่อนใช้งาน
+      // คุณสามารถสร้าง base64 font ได้จาก https://raw.githubusercontent.com/MrRio/jsPDF/master/fontconverter/fontconverter.html
+      // หรือใช้ฟอนต์ที่เตรียมไว้แล้ว (เช่น THSarabunNew)
+      // ตัวอย่างการเพิ่มฟอนต์ THSarabunNew (ต้องเพิ่มในโค้ดจริง หรือโหลดจาก CDN)
+      // นี่คือส่วนที่สำคัญสำหรับการแสดงผลภาษาไทยใน PDF
+      doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal'); // สมมติว่ามีไฟล์ Sarabun-Regular.ttf ในโปรเจกต์
+      doc.setFont('Sarabun', 'normal'); // กำหนดฟอนต์ที่ใช้
+      // ถ้าไม่มีไฟล์ฟอนต์ ให้ใช้ฟอนต์ที่ใกล้เคียงที่สุด หรือบอกผู้ใช้ให้เพิ่มฟอนต์
+
+      const date = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'short' });
+
+      doc.setFontSize(24);
+      doc.setTextColor(59, 89, 152); // สีน้ำเงินเข้ม
+      doc.text("ใบเสนอราคาทุเรียน", 105, 30, { align: 'center' }); // จัดกึ่งกลาง
+
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0); // สีดำ
+
+      let y = 50;
+      doc.text(`วันที่: ${date}`, 20, y);
+      y += 10;
+      doc.text(`ชื่อลูกค้า: ${latestQuote.name}`, 20, y);
+      y += 10;
+      doc.text(`สินค้า: ${latestQuote.product}`, 20, y);
+      y += 10;
+      doc.text(`น้ำหนัก: ${latestQuote.weight} กก.`, 20, y);
+      y += 10;
+      doc.text(`ราคาขายต่อกิโล: ${latestQuote.price} บาท`, 20, y);
+      y += 10;
+
+      doc.setFontSize(18);
+      doc.setTextColor(0, 100, 0); // สีเขียวเข้ม
+      doc.text(`รวมทั้งหมด: ${latestQuote.total} บาท`, 20, y + 10);
+
+      doc.save(`ใบเสนอราคา_${latestQuote.name}_${Date.now()}.pdf`);
+    }
+  </script>
+</body>
+</html>
