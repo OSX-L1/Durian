@@ -1,180 +1,387 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>โปรแกรมขายทุเรียน - ทีมทุเรียน</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body {
-      font-family: 'Sarabun', sans-serif;
-      background-color: #fdfcef;
-      color: #333;
-      padding: 20px;
-    }
-    h1 {
-      color: #7ea14b;
-      text-align: center;
-    }
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background-color: #fffbea;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      margin-bottom: 5px; /* เพิ่มระยะห่างด้านล่างของ label */
-      font-weight: bold; /* ทำให้ label หนาขึ้นเล็กน้อย */
-    }
-    input {
-      width: calc(100% - 16px); /* ปรับความกว้างให้พอดีกับ padding */
-      padding: 8px;
-      margin-top: 4px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      box-sizing: border-box; /* ทำให้ padding ไม่เพิ่มขนาดของ input */
-    }
-    button {
-      background-color: #ffcc00;
-      color: #333;
-      border: none;
-      padding: 10px 16px;
-      margin-top: 20px;
-      border-radius: 12px;
-      width: 100%;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.3s ease; /* เพิ่ม transition ให้ปุ่ม */
-    }
-    button:hover {
-      background-color: #ffda4f;
-    }
-    .result {
-      margin-top: 20px;
-      font-size: 18px;
-      color: #5c7d2e;
-      text-align: center; /* จัดให้อยู่กึ่งกลาง */
-      font-weight: bold;
-    }
-    .error {
-      color: #d9534f; /* สีแดงสำหรับข้อผิดพลาด */
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมคำนวณราคาทุเรียนภูเขาไฟ (Admin)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF and html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icon Library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { 
+            font-family: 'Kanit', sans-serif; 
+        }
+        .modal { 
+            @apply fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity hidden; 
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h1>ใบเสนอราคาทุเรียน</h1>
-    <label for="customerName">ชื่อลูกค้า:</label>
-    <input type="text" id="customerName" placeholder="กรุณาใส่ชื่อลูกค้า" />
+<body class="bg-gradient-to-br from-amber-50 to-orange-100">
 
-    <label for="productName">ชื่อสินค้า:</label>
-    <input type="text" id="productName" value="ทุเรียน ภูเขาไฟ" disabled />
+    <div id="config-error-modal" class="modal">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <div class="text-center">
+                <i class="fas fa-cogs text-5xl text-red-500 mb-4"></i>
+                <h2 class="text-2xl font-bold text-slate-800">จำเป็นต้องตั้งค่าเพิ่มเติมใน Firebase</h2>
+                <p class="text-slate-600 mt-2 mb-6">เพื่อให้ระบบหลังบ้านทำงานได้ กรุณาเปิดใช้งาน "การลงชื่อเข้าใช้แบบไม่ระบุตัวตน" (Anonymous) ในโปรเจกต์ Firebase ของคุณ</p>
+            </div>
+            <div class="text-left space-y-4">
+                <p><strong>ขั้นตอนการแก้ไข:</strong></p>
+                <ol class="list-decimal list-inside space-y-3 bg-slate-50 p-4 rounded-lg text-slate-700">
+                    <li>ไปที่ <strong>Firebase Console</strong> และเลือกโปรเจกต์ <code class="bg-gray-200 px-1 rounded">durianos1</code> ของคุณ</li>
+                    <li>ในเมนูด้านซ้าย คลิกที่ <strong>Build</strong> > <strong>Authentication</strong></li>
+                    <li>เลือกแท็บ <strong>Sign-in method</strong></li>
+                    <li>ในรายการผู้ให้บริการ (Provider list) คลิกที่ <strong>"ไม่ระบุตัวตน" (Anonymous)</strong></li>
+                    <li>กดปุ่มเปิดใช้งาน (Enable) แล้วคลิก <strong>Save</strong></li>
+                </ol>
+                <img src="https://i.imgur.com/gB2xg2j.gif" alt="ขั้นตอนการเปิดใช้งาน Anonymous Sign-in" class="w-full rounded-md border shadow-sm">
+            </div>
+            <div class="mt-8 text-center">
+                <button id="reload-page-btn" class="w-full max-w-xs text-base font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 shadow-lg text-white bg-orange-400 hover:bg-orange-500 border-b-4 border-orange-600 active:border-b-2 active:translate-y-px">ตั้งค่าเสร็จแล้ว, ลองเชื่อมต่อใหม่</button>
+            </div>
+        </div>
+    </div>
 
-    <label for="weight">จำนวนน้ำหนัก (กก.):</label>
-    <input type="number" id="weight" min="0" step="0.1" placeholder="เช่น 5.5" />
+    <header class="bg-white/80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center sticky top-0 z-40 border-b border-slate-200">
+        <h1 class="text-xl font-bold text-slate-800">ทุเรียนภูเขาไฟ</h1>
+        <button id="show-admin-login" class="text-slate-600 hover:text-orange-600 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-orange-100/50 transition-colors" disabled>
+            <i class="fa-solid fa-database"></i>
+            <span>ระบบหลังบ้าน</span>
+        </button>
+    </header>
 
-    <label for="pricePerKg">ราคาขายต่อกิโล (บาท):</label>
-    <input type="number" id="pricePerKg" min="0" step="0.01" placeholder="เช่น 120.00" />
+    <div id="app-view">
+        <main class="w-full max-w-4xl mx-auto bg-white/70 backdrop-blur-xl p-6 md:p-10 rounded-2xl shadow-xl border border-white/50 my-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800">โปรแกรมคำนวณราคาทุเรียน</h1>
+                <p class="text-slate-500 mt-2">กรอกข้อมูลเพื่อคำนวณราคาและสร้างใบเสนอราคา</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="space-y-6">
+                    <form id="price-calculator-form">
+                        <div>
+                            <label for="customerName" class="block text-sm font-medium text-slate-700 mb-1">ชื่อลูกค้า</label>
+                            <input type="text" id="customerName" class="w-full px-4 py-2 bg-white/60 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition-shadow" placeholder="เช่น คุณสมหญิง ศรีสุข" required>
+                        </div>
+                        <div>
+                            <label for="productName" class="block text-sm font-medium text-slate-700 mb-1">ชื่อสินค้า</label>
+                            <input type="text" id="productName" class="w-full px-4 py-2 bg-slate-100/80 border border-slate-300 rounded-lg" value="ทุเรียนภูเขาไฟศรีสะเกษ" readonly>
+                        </div>
+                        <div>
+                            <label for="weight" class="block text-sm font-medium text-slate-700 mb-1">น้ำหนัก (กก.)</label>
+                            <input type="number" id="weight" class="w-full px-4 py-2 bg-white/60 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="เช่น 3.5" min="0" step="0.01" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">ราคาขาย (บาท/กก.)</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <div><input type="radio" id="price120" name="priceOption" value="120" class="peer hidden" checked><label for="price120" class="flex items-center justify-center p-3 bg-white border-2 border-slate-300 rounded-lg cursor-pointer transition-all duration-200 text-slate-700 font-medium shadow-sm hover:shadow-md peer-checked:bg-orange-100 peer-checked:text-orange-800 peer-checked:border-orange-500 peer-checked:ring-2 peer-checked:ring-orange-300 peer-checked:transform peer-checked:scale-105 peer-checked:shadow-lg">120.-</label></div>
+                                <div><input type="radio" id="price130" name="priceOption" value="130" class="peer hidden"><label for="price130" class="flex items-center justify-center p-3 bg-white border-2 border-slate-300 rounded-lg cursor-pointer transition-all duration-200 text-slate-700 font-medium shadow-sm hover:shadow-md peer-checked:bg-orange-100 peer-checked:text-orange-800 peer-checked:border-orange-500 peer-checked:ring-2 peer-checked:ring-orange-300 peer-checked:transform peer-checked:scale-105 peer-checked:shadow-lg">130.-</label></div>
+                                <div><input type="radio" id="price150" name="priceOption" value="150" class="peer hidden"><label for="price150" class="flex items-center justify-center p-3 bg-white border-2 border-slate-300 rounded-lg cursor-pointer transition-all duration-200 text-slate-700 font-medium shadow-sm hover:shadow-md peer-checked:bg-orange-100 peer-checked:text-orange-800 peer-checked:border-orange-500 peer-checked:ring-2 peer-checked:ring-orange-300 peer-checked:transform peer-checked:scale-105 peer-checked:shadow-lg">150.-</label></div>
+                                <div><input type="radio" id="priceCustom" name="priceOption" value="custom" class="peer hidden"><label for="priceCustom" class="flex items-center justify-center p-3 bg-white border-2 border-slate-300 rounded-lg cursor-pointer transition-all duration-200 text-slate-700 font-medium shadow-sm hover:shadow-md peer-checked:bg-orange-100 peer-checked:text-orange-800 peer-checked:border-orange-500 peer-checked:ring-2 peer-checked:ring-orange-300 peer-checked:transform peer-checked:scale-105 peer-checked:shadow-lg">อื่นๆ</label></div>
+                            </div>
+                            <input type="number" id="customPrice" class="w-full px-4 py-2 bg-white/60 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 mt-3 hidden" placeholder="กรอกราคาเอง" min="0">
+                        </div>
+                         <div>
+                            <label for="logoUpload" class="block text-sm font-medium text-slate-700 mb-1">อัปโหลดโลโก้ร้าน</label>
+                            <input type="file" id="logoUpload" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer">
+                        </div>
+                        <button type="submit" class="w-full font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 shadow-lg text-lg py-4 flex items-center justify-center gap-2 text-white bg-orange-400 hover:bg-orange-500 border-b-4 border-orange-600 active:border-b-2 active:translate-y-px"><i class="fa-solid fa-calculator mr-2"></i>คำนวณราคา</button>
+                    </form>
+                </div>
+                <div id="quotation-container" class="bg-slate-50/70 p-6 rounded-lg border border-dashed border-slate-300 hidden">
+                    <div id="quotation-content-wrapper"></div>
+                    <div id="action-buttons" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                        <button id="save-to-db" class="w-full font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 shadow-md flex items-center justify-center gap-2 bg-slate-300 text-slate-500 cursor-not-allowed border-b-4 border-slate-400" disabled><i class="fa-solid fa-cloud-arrow-up"></i>บันทึกลงฐานข้อมูล</button>
+                        <button id="download-pdf" class="w-full font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 shadow-md flex items-center justify-center gap-2 text-white bg-green-600 hover:bg-green-700 focus:ring-green-500"><i class="fa-solid fa-file-pdf"></i>ดาวน์โหลด PDF</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    <button onclick="calculateTotal()">คำนวณราคา</button>
-    <button onclick="downloadPDF()">ดาวน์โหลดใบเสนอราคา (PDF)</button>
+    <div id="admin-view" class="hidden">
+        <div class="w-full max-w-6xl mx-auto p-4 md:p-8">
+             <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">ข้อมูลใบเสนอราคาทั้งหมด</h2>
+                <button id="back-to-app" class="text-slate-600 hover:text-orange-600 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-orange-100/50">
+                    <i class="fa-solid fa-arrow-left"></i><span>กลับหน้าหลัก</span>
+                </button>
+            </div>
+            <div id="quotation-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <p class="text-slate-500 col-span-full text-center">กำลังโหลดข้อมูล...</p>
+            </div>
+        </div>
+    </div>
 
-    <div class="result" id="result"></div>
+    <div id="admin-login-modal" class="modal">
+        <div class="bg-white p-8 rounded-lg shadow-xl text-center w-full max-w-sm mx-auto">
+            <h3 class="text-xl font-bold text-slate-700 mb-4">กรุณาใส่รหัสผ่าน</h3>
+            <input type="password" id="admin-password" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-center" placeholder="******">
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <button id="cancel-login" class="w-full font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 shadow-md flex items-center justify-center gap-2 bg-slate-300 hover:bg-slate-400 text-slate-800">ยกเลิก</button>
+                <button id="submit-login" class="w-full font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 shadow-lg text-lg flex items-center justify-center gap-2 text-white bg-orange-400 hover:bg-orange-500 border-b-4 border-orange-600 active:border-b-2 active:translate-y-px">เข้าสู่ระบบ</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="quotation-detail-modal" class="modal">
+         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative m-4">
+             <button id="close-detail-modal" class="absolute top-4 right-4 text-slate-500 hover:text-red-500 text-2xl z-10"><i class="fa-solid fa-times-circle"></i></button>
+             <div id="modal-quotation-content" class="p-8"></div>
+         </div>
+    </div>
 
-  </div>
-  <script>
-    let latestQuote = null;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    function calculateTotal() {
-      const customerNameInput = document.getElementById('customerName');
-      const weightInput = document.getElementById('weight');
-      const pricePerKgInput = document.getElementById('pricePerKg');
-      const resultDiv = document.getElementById('result');
+        const firebaseConfig = {
+            apiKey: "AIzaSyD3_szfgr4xdeEBYU4H0sx1LUwoGW-gzuk",
+            authDomain: "durianos1.firebaseapp.com",
+            projectId: "durianos1",
+            storageBucket: "durianos1.appspot.com",
+            messagingSenderId: "44995004576",
+            appId: "1:44995004576:web:a36e4498c6ff66d89e61c5",
+            measurementId: "G-F391822XE9"
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = {
+                configErrorModal: document.getElementById('config-error-modal'),
+                reloadPageBtn: document.getElementById('reload-page-btn'),
+                adminLoginModal: document.getElementById('admin-login-modal'),
+                detailModal: document.getElementById('quotation-detail-modal'),
+                saveToDbBtn: document.getElementById('save-to-db'),
+                showAdminLoginBtn: document.getElementById('show-admin-login'),
+                priceForm: document.getElementById('price-calculator-form'),
+                quotationContainer: document.getElementById('quotation-container'),
+                quotationContentWrapper: document.getElementById('quotation-content-wrapper'),
+                customPriceInput: document.getElementById('customPrice'),
+                logoUploadInput: document.getElementById('logoUpload'),
+                downloadPdfBtn: document.getElementById('download-pdf'),
+                adminView: document.getElementById('admin-view'),
+                appView: document.getElementById('app-view'),
+                quotationListDiv: document.getElementById('quotation-list'),
+                cancelLoginBtn: document.getElementById('cancel-login'),
+                submitLoginBtn: document.getElementById('submit-login'),
+                adminPasswordField: document.getElementById('admin-password'),
+                backToAppBtn: document.getElementById('back-to-app'),
+                closeDetailModalBtn: document.getElementById('close-detail-modal'),
+                modalQuotationContent: document.getElementById('modal-quotation-content'),
+            };
 
-      const name = customerNameInput.value.trim(); // ใช้ trim() เพื่อลบช่องว่างหน้าหลัง
-      const weight = parseFloat(weightInput.value);
-      const price = parseFloat(pricePerKgInput.value);
+            initializeCoreEventListeners(elements);
 
-      if (!name) {
-        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกชื่อลูกค้า</span>';
-        latestQuote = null; // รีเซ็ต latestQuote ถ้าข้อมูลไม่สมบูรณ์
-        return;
-      }
-      if (isNaN(weight) || weight <= 0) {
-        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกน้ำหนักให้ถูกต้อง</span>';
-        latestQuote = null;
-        return;
-      }
-      if (isNaN(price) || price <= 0) {
-        resultDiv.innerHTML = '<span class="error">⚠️ กรุณากรอกราคาขายต่อกิโลให้ถูกต้อง</span>';
-        latestQuote = null;
-        return;
-      }
+            let app, db, auth;
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+            } catch (e) {
+                console.error("Firebase initialization failed:", e);
+                elements.configErrorModal.classList.remove('hidden');
+                elements.configErrorModal.querySelector('p.text-slate-600').textContent = 'การตั้งค่า Firebase ไม่ถูกต้อง! กรุณาตรวจสอบค่า firebaseConfig ในโค้ด';
+                return;
+            }
 
-      const total = weight * price;
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    console.log("User is signed in anonymously.", user.uid);
+                    elements.configErrorModal.classList.add('hidden');
+                    enableBackendFeatures(db, elements);
+                } else {
+                    signInAnonymously(auth).catch((error) => {
+                        console.error("Anonymous sign-in failed:", error);
+                        if (error.code === 'auth/configuration-not-found') {
+                            elements.configErrorModal.classList.remove('hidden');
+                        }
+                    });
+                }
+            });
 
-      resultDiv.innerHTML = `คุณ ${name} ต้องชำระเงินทั้งหมด: <strong>${total.toFixed(2)}</strong> บาท`;
-      resultDiv.classList.remove('error'); // ลบ class error ออกเมื่อคำนวณสำเร็จ
+            elements.reloadPageBtn.addEventListener('click', () => location.reload());
 
-      latestQuote = {
-        name,
-        product: document.getElementById('productName').value,
-        weight: weight.toFixed(2), // เก็บเป็นทศนิยม 2 ตำแหน่ง
-        price: price.toFixed(2),   // เก็บเป็นทศนิยม 2 ตำแหน่ง
-        total: total.toFixed(2)
-      };
-    }
+            let currentQuotationData = null;
+            let logoDataUrl = 'https://i.imgur.com/832P5W0.png';
 
-    async function downloadPDF() {
-      if (!latestQuote) {
-        alert('กรุณาคำนวณราคาก่อนดาวน์โหลด PDF');
-        return;
-      }
+            function generateQuotationHTML(data) {
+                if (!data) return '';
+                const currencyFormatter = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' });
+                const numberFormatter = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const quoteDate = data.quoteDate ? new Date(data.quoteDate) : new Date();
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+                return `
+                    <div id="quotation-content" class="p-1">
+                        <div class="flex justify-between items-start pb-4 border-b-2 border-slate-200 mb-4">
+                            <div><h2 class="text-2xl font-bold text-slate-800">ใบเสนอราคา</h2><p class="text-sm text-slate-500">${quoteDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
+                            <img src="${data.logoUrl || 'https://i.imgur.com/832P5W0.png'}" alt="Logo" class="max-h-16 object-contain" crossorigin="anonymous">
+                        </div>
+                        <div class="mb-6"><p class="text-sm text-slate-500">เรียนคุณ:</p><p class="font-semibold text-slate-800 text-lg">${data.customerName}</p></div>
+                        <table class="w-full text-left">
+                             <thead class="bg-slate-100"><tr><th class="p-3 text-sm font-semibold text-slate-600">รายการ</th><th class="p-3 text-sm font-semibold text-slate-600 text-center">น้ำหนัก</th><th class="p-3 text-sm font-semibold text-slate-600 text-center">ราคา/หน่วย</th><th class="p-3 text-sm font-semibold text-slate-600 text-right">ราคารวม</th></tr></thead>
+                            <tbody><tr class="border-b"><td class="p-3 text-slate-700">${data.productName}</td><td class="p-3 text-slate-700 text-center">${numberFormatter.format(data.weight)}</td><td class="p-3 text-slate-700 text-center">${currencyFormatter.format(data.unitPrice)}</td><td class="p-3 text-slate-700 text-right">${currencyFormatter.format(data.totalPrice)}</td></tr></tbody>
+                        </table>
+                        <div class="mt-6 flex justify-end"><div class="w-full max-w-xs text-right"><div class="flex justify-between text-2xl mt-2 pt-2 border-t-2"><span class="font-bold text-slate-800">ยอดรวมสุทธิ</span><span class="font-bold text-orange-600">${currencyFormatter.format(data.totalPrice)}</span></div></div></div>
+                    </div>
+                `;
+            };
+            
+            function initializeCoreEventListeners({ priceForm, customPriceInput, logoUploadInput, downloadPdfBtn, quotationContainer, quotationContentWrapper }) {
+                document.querySelectorAll('input[name="priceOption"]').forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        customPriceInput.classList.toggle('hidden', radio.value !== 'custom');
+                        customPriceInput.required = (radio.value === 'custom');
+                    });
+                });
 
-      // ต้องโหลดฟอนต์ภาษาไทยสำหรับ jsPDF ก่อนใช้งาน
-      // คุณสามารถสร้าง base64 font ได้จาก https://raw.githubusercontent.com/MrRio/jsPDF/master/fontconverter/fontconverter.html
-      // หรือใช้ฟอนต์ที่เตรียมไว้แล้ว (เช่น THSarabunNew)
-      // ตัวอย่างการเพิ่มฟอนต์ THSarabunNew (ต้องเพิ่มในโค้ดจริง หรือโหลดจาก CDN)
-      // นี่คือส่วนที่สำคัญสำหรับการแสดงผลภาษาไทยใน PDF
-      doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal'); // สมมติว่ามีไฟล์ Sarabun-Regular.ttf ในโปรเจกต์
-      doc.setFont('Sarabun', 'normal'); // กำหนดฟอนต์ที่ใช้
-      // ถ้าไม่มีไฟล์ฟอนต์ ให้ใช้ฟอนต์ที่ใกล้เคียงที่สุด หรือบอกผู้ใช้ให้เพิ่มฟอนต์
+                logoUploadInput.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => { logoDataUrl = e.target.result; };
+                        reader.readAsDataURL(file);
+                    }
+                });
 
-      const date = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'short' });
+                priceForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const selectedPriceOption = document.querySelector('input[name="priceOption"]:checked').value;
+                    const price = (selectedPriceOption === 'custom') ? parseFloat(customPriceInput.value) : parseFloat(selectedPriceOption);
+                    const weight = parseFloat(document.getElementById('weight').value);
 
-      doc.setFontSize(24);
-      doc.setTextColor(59, 89, 152); // สีน้ำเงินเข้ม
-      doc.text("ใบเสนอราคาทุเรียน", 105, 30, { align: 'center' }); // จัดกึ่งกลาง
+                    if (isNaN(price) || isNaN(weight) || price <= 0 || weight <= 0) {
+                        alert("กรุณากรอกน้ำหนักและราคาให้ถูกต้อง"); return;
+                    }
 
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0); // สีดำ
+                    currentQuotationData = {
+                        customerName: document.getElementById('customerName').value.trim(),
+                        productName: document.getElementById('productName').value,
+                        weight: weight, unitPrice: price, totalPrice: weight * price,
+                        quoteDate: new Date().toISOString(), logoUrl: logoDataUrl,
+                    };
+                    
+                    quotationContentWrapper.innerHTML = generateQuotationHTML(currentQuotationData);
+                    quotationContainer.classList.remove('hidden');
+                });
 
-      let y = 50;
-      doc.text(`วันที่: ${date}`, 20, y);
-      y += 10;
-      doc.text(`ชื่อลูกค้า: ${latestQuote.name}`, 20, y);
-      y += 10;
-      doc.text(`สินค้า: ${latestQuote.product}`, 20, y);
-      y += 10;
-      doc.text(`น้ำหนัก: ${latestQuote.weight} กก.`, 20, y);
-      y += 10;
-      doc.text(`ราคาขายต่อกิโล: ${latestQuote.price} บาท`, 20, y);
-      y += 10;
+                downloadPdfBtn.addEventListener('click', async () => {
+                    if (!currentQuotationData) return;
+                    const contentToRender = quotationContentWrapper.querySelector('#quotation-content');
+                    if (!contentToRender) return;
 
-      doc.setFontSize(18);
-      doc.setTextColor(0, 100, 0); // สีเขียวเข้ม
-      doc.text(`รวมทั้งหมด: ${latestQuote.total} บาท`, 20, y + 10);
+                    const { jsPDF } = window.jspdf;
+                    const canvas = await html2canvas(contentToRender, { scale: 2, useCORS: true });
+                    const imgData = canvas.toDataURL('image/png');
+                    
+                    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth-20, pdfHeight > 277 ? 277 : pdfHeight-20);
+                    
+                    const filename = `ใบเสนอราคา_${currentQuotationData.customerName.replace(/\s/g, '_')}.pdf`;
+                    pdf.save(filename);
+                });
+            }
+            
+            function enableBackendFeatures(db, { saveToDbBtn, showAdminLoginBtn, adminView, appView, adminLoginModal, cancelLoginBtn, submitLoginBtn, adminPasswordField, backToAppBtn, detailModal, closeDetailModalBtn, quotationListDiv, priceForm, quotationContainer }) {
+                saveToDbBtn.disabled = false;
+                saveToDbBtn.className = "w-full font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 shadow-md flex items-center justify-center gap-2 text-white bg-gradient-to-br from-sky-500 to-blue-600 hover:shadow-lg hover:shadow-sky-200 transform hover:-translate-y-0.5";
+                showAdminLoginBtn.disabled = false;
 
-      doc.save(`ใบเสนอราคา_${latestQuote.name}_${Date.now()}.pdf`);
-    }
-  </script>
+                saveToDbBtn.addEventListener('click', async () => {
+                    if (!currentQuotationData) return;
+                    try {
+                        await addDoc(collection(db, "quotations"), currentQuotationData);
+                        alert('บันทึกใบเสนอราคาสำเร็จ!');
+                        priceForm.reset();
+                        quotationContainer.classList.add('hidden');
+                        currentQuotationData = null;
+                    } catch (error) { console.error("Error adding document: ", error); alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล'); }
+                });
+                
+                showAdminLoginBtn.addEventListener('click', () => adminLoginModal.classList.remove('hidden'));
+                cancelLoginBtn.addEventListener('click', () => adminLoginModal.classList.add('hidden'));
+                backToAppBtn.addEventListener('click', () => {
+                    adminView.classList.add('hidden'); appView.classList.remove('hidden');
+                });
+
+                submitLoginBtn.addEventListener('click', () => {
+                    if (adminPasswordField.value === '14506') {
+                        adminLoginModal.classList.add('hidden');
+                        appView.classList.add('hidden');
+                        adminView.classList.remove('hidden');
+                        adminPasswordField.value = '';
+                    } else { alert('รหัสผ่านไม่ถูกต้อง!'); }
+                });
+
+                closeDetailModalBtn.addEventListener('click', () => detailModal.classList.add('hidden'));
+                
+                loadQuotations(db, elements);
+            }
+
+            function loadQuotations(db, { quotationListDiv, detailModal, modalQuotationContent }) {
+                const quotationsCol = collection(db, 'quotations');
+                onSnapshot(quotationsCol, (snapshot) => {
+                    let allDocs = [];
+                    snapshot.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
+                    allDocs.sort((a, b) => new Date(b.quoteDate) - new Date(a.quoteDate));
+                    quotationListDiv.innerHTML = ''; 
+                    if (allDocs.length === 0) {
+                        quotationListDiv.innerHTML = `<p class="text-slate-500 col-span-full text-center">ยังไม่มีข้อมูลใบเสนอราคาที่บันทึกไว้</p>`;
+                        return;
+                    }
+
+                    allDocs.forEach(data => {
+                        const quoteCard = document.createElement('div');
+                        quoteCard.className = 'quote-card bg-white/60 p-5 rounded-lg shadow-sm border transition hover:shadow-md hover:border-orange-400 cursor-pointer backdrop-blur-sm';
+                        quoteCard.dataset.id = data.id;
+                        quoteCard.innerHTML = `
+                            <div class="flex justify-between items-start pointer-events-none">
+                                <div class="flex-1"><p class="font-bold text-lg text-slate-800">${data.customerName}</p><p class="text-sm text-slate-500">${new Date(data.quoteDate).toLocaleDateString('th-TH')}</p></div>
+                                <img src="${data.logoUrl || 'https://i.imgur.com/832P5W0.png'}" class="h-8 ml-2 object-contain">
+                            </div>
+                            <p class="text-2xl font-semibold text-orange-600 my-3 text-right pointer-events-none">${new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(data.totalPrice)}</p>
+                            <div class="mt-4 text-right"><button class="delete-btn text-red-500 hover:text-red-700 font-semibold" data-id="${data.id}"><i class="fa-solid fa-trash"></i> ลบ</button></div>
+                        `;
+                        quotationListDiv.appendChild(quoteCard);
+                    });
+
+                    quotationListDiv.addEventListener('click', async (e) => {
+                        const deleteButton = e.target.closest('.delete-btn');
+                        const card = e.target.closest('.quote-card');
+
+                        if (deleteButton) {
+                            e.stopPropagation();
+                            const id = deleteButton.dataset.id;
+                            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบใบเสนอราคานี้?')) {
+                                await deleteDoc(doc(db, 'quotations', id)).catch(err => {
+                                    console.error("Delete failed: ", err);
+                                    alert("การลบข้อมูลล้มเหลว!");
+                                });
+                            }
+                        } else if (card) {
+                            const id = card.dataset.id;
+                            const docRef = doc(db, 'quotations', id);
+                            const docSnap = await getDoc(docRef);
+                            if (docSnap.exists()) {
+                                modalQuotationContent.innerHTML = generateQuotationHTML(docSnap.data());
+                                detailModal.classList.remove('hidden');
+                            }
+                        }
+                    });
+                }, (error) => {
+                    console.error("Error fetching quotations:", error);
+                    quotationListDiv.innerHTML = `<p class="text-red-500 col-span-full text-center">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>`;
+                });
+            };
+        });
+    </script>
 </body>
 </html>
